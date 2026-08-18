@@ -61,4 +61,10 @@ nightly + a JS runtime like deno may be needed: `pip install -U --pre yt-dlp`).
 Built with a TDD-for-documentation process (baseline test without the skill →
 write → blind re-test with a fresh agent → refactor), on real videos.
 
+## Contributing
+
+This started as a personal tool and surely has blind spots. If you see a better
+recipe, a cheaper probe, or a niche it handles poorly — issues and PRs are very
+welcome, including small ones.
+
 MIT license.
