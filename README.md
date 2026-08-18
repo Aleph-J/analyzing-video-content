@@ -33,7 +33,16 @@ nightly + a JS runtime like deno may be needed: `pip install -U --pre yt-dlp`).
 
 ## Key techniques inside
 
+- **Need × cost modes**: EXHAUSTIVE (short video or "capture everything" — every
+  scene change gets seen, via sheets), STANDARD (selective attention), MINIMAL
+  (recon). The agent announces its mode and adapts depth to the actual need.
 - **3-layer cost ladder**: free text → reduced transcript → targeted frames.
+- **Content-type routing**: each contact-sheet tile is tagged (table, dense text,
+  chart, UI, overlay, face, b-roll) and routed to a per-type extraction recipe —
+  faces cost zero reads, tables get verbatim full-res transcription.
+- **Budget checkpoints**: spend vs. coverage tracked at every sheet; a declared
+  degradation order guarantees coverage is finished with sheets before budget dies —
+  never silent truncation.
 - **Coverage guarantee**: a zero-token ffmpeg scene-density probe decides IF the
   video is visually rich; a full-duration contact-sheet sweep guarantees no major
   on-screen content goes unseen — keyword triggers only decide where to zoom.

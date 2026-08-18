@@ -12,12 +12,33 @@ pinned comments, linked resources), **the audio** (transcript), and **the screen
 (what is shown but never said). Complete analysis = mine them in that order,
 because each layer is ~10× cheaper than the next.
 
+The goal is to give the analyst SIGHT. A human watches at 24 fps but *attends*
+selectively; full-rate capture is unaffordable, so attention is the substitute —
+**except when full capture IS affordable, in which case take it** (see modes).
+
 Core principle: **narrow first, read last.** Every vision read costs ~1-1.5k tokens.
 The whole craft is deciding WHICH few frames deserve eyes.
 
 Works for any niche — trading screens, startup metric dashboards, medical lecture
 slides, cooking steps, code tutorials, fitness form demos. See "Adapting to your
 niche" at the end.
+
+## Choosing the depth — need × cost (pick a mode, say which)
+
+Before any layer, state three facts: the NEED (what completeness does the task
+require — "capture everything" vs "find X" vs "worth a deeper look?"), the COST
+side (duration × scene density, from the zero-token probe in Layer 3), and the
+BUDGET if one is set. Then pick a mode and announce it:
+
+| Mode | When (observable predicates) | What you do |
+|---|---|---|
+| **EXHAUSTIVE** — full sight | short video (≲20 min), OR need says "everything" and estimated cost fits: `ceil(scene_frames/8) × ~1.5k tokens` | Extract EVERY scene-change frame, sheet ALL of them, read every sheet, full-res dive on every info-bearing screen (budget ~1 dive per distinct screen seen on the sheets). Nothing sampled, nothing skipped. |
+| **STANDARD** — selective attention | default | Sweep + triggers + targeted dives (the rest of this skill). |
+| **MINIMAL** — recon | budget ≲3k tokens, or need = "should we look deeper?" | Layer 1 + reduced transcript + probe verdict only; report what a deeper pass would cover. |
+
+Exhaustive is not a failure of economy: a 10-min screencast with 40 scene changes
+costs ~5 sheet reads to see *in full* — cheaper than missing the one overlay that
+mattered. The economy machinery below is for when full capture does NOT fit.
 
 ## Layer 1 — Free text (always first, ~0 cost)
 
@@ -88,6 +109,38 @@ One 4×2 sheet ≈ one vision read, and tells you which frames deserve full
 resolution. Rule: about to Read more than ~10 images? Stop — sheet them first.
 Then re-read only the 1-3 frames per distinct screen at full size.
 
+### The sheet is the classifier — tag tiles, route by type
+
+A sheet read is not just "looking": TAG every tile with a content type, then apply
+that type's recipe. This is how the skill adapts to any subject — the types are
+universal, only their value ranking shifts per niche:
+
+| Tile type | Value | Recipe |
+|---|---|---|
+| TABLE / LIST (ingredients, positions, specs, rankings) | high | full-res single frame, transcribe verbatim, confirm on neighbor frame |
+| DENSE TEXT (prompt, code, recipe, slide bullets) | high | full-res at 720p+ (crop+upscale if needed); scrolling → first/last frame, then 2s sampling if they differ |
+| CHART / GRAPH | high | full-res; extract axes, annotations, drawn levels; if it evolves → 2-3 timestamps stacked in one image |
+| UI / DASHBOARD | high | crop the info panels, zstack across timestamps |
+| TEXT OVERLAY (lower-third, caption, quantity) | medium | overlays flash in/out — sample ±5-10s around the tile to catch the full text |
+| FACE / TALKING HEAD | zero — the info is in the transcript | skip, never spend a read |
+| B-ROLL / AMBIANCE (hands, pan, scenery) | context only | skip unless the question is about the gesture/technique itself |
+
+### Budget checkpoints — degrade declared, never silent
+
+If a budget is set, checkpoint at every sheet read: tokens spent vs. % of duration
+covered. Coverage lagging spend (e.g. 80% spent, 50% covered) → stop unit
+full-res reads, finish coverage of the unseen spans with sheets only, then put any
+remainder into the single highest-value full-res dive. Degradation order (drop
+first → last):
+
+1. full-res re-reads of content already legible on a sheet
+2. B-roll / context tiles
+3. arc-tracking (same panel across multiple timestamps)
+4. NEVER drop: the coverage sweep of unseen spans, and verbatim targets named by
+   transcript content gaps.
+
+The report always states what was NOT covered and what a bigger budget would add.
+
 ### Resolution floor — and the crop+upscale escape hatch
 
 720p minimum for DIRECT reading of dense on-screen text (dashboards, prompts,
@@ -120,9 +173,10 @@ confirm key figures at two reading scales.
 
 | Approach | Vision reads | Tokens |
 |---|---|---|
-| Naive: read every scene-change of a 20-min video | 150-200 | 200k+ |
+| Naive: read every scene-change of a 20-min video one-by-one | 150-200 | 200k+ |
 | Triggers → direct frame reads | 4-8 | 6-10k |
 | Sampling → contact sheets → targeted full-res | 3-6 | 5-8k |
+| EXHAUSTIVE mode via sheets (estimate, not the naive trap) | `ceil(scene_frames/8)` sheets + dives | `sheets × ~1.5k` + dives |
 
 ## Adapting to your niche
 
@@ -154,3 +208,8 @@ list change.
 - Fighting a stalled live-VOD download instead of switching to URL frame grabs.
 - Analyzing the raw VTT (10× token waste) instead of the reduced transcript.
 - Trusting a single frame of animated/scrolling text.
+- Spending reads on FACE/talking-head tiles — that information is in the transcript.
+- Economizing on a short video where EXHAUSTIVE mode was affordable — missing
+  content to save tokens that were available is the worse failure.
+- Running out of budget mid-video silently instead of checkpointing and finishing
+  coverage with sheets.
